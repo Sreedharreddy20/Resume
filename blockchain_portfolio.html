@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sreedhar's Decentralized Portfolio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff88;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-container {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .hash-input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .hash-input::placeholder {
+            color: rgba(0, 255, 136, 0.5);
+        }
+
+        .auth-btn {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #0f0f23;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .portfolio-container {
+            display: none;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        .name-title {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00ff88, #00cc6a, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .blockchain-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            position: relative;
+        }
+
+        .chain-connection {
+            display: none;
+        }
+
+        .block {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 0 20px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .block:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.3);
+            border-color: #0099ff;
+        }
+
+        .block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .block:hover::before {
+            left: 100%;
+        }
+
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .block-title {
+            font-size: 24px;
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .block-hash {
+            font-size: 12px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .transaction-id {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 10px;
+            color: #0099ff;
+            background: rgba(0, 153, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid #0099ff;
+        }
+
+        .block-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.6s ease, opacity 0.4s ease;
+            opacity: 0;
+        }
+
+        .block.expanded .block-content {
+            max-height: 1000px;
+            opacity: 1;
+        }
+
+        .block-preview {
+            font-size: 16px;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .detail-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border-left: 4px solid #00ff88;
+            border-radius: 5px;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .project-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #00ff88;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            background: rgba(0, 255, 136, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .skill-category {
+            background: rgba(0, 153, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #0099ff;
+        }
+
+        .skill-category h4 {
+            color: #0099ff;
+            margin-bottom: 10px;
+        }
+
+        .genesis-block {
+            border-color: #ff6b6b;
+            background: linear-gradient(135deg, #2d1b2e, #3d1a2e);
+        }
+
+        .genesis-block:hover {
+            border-color: #ff8e8e;
+            box-shadow: 0 20px 60px rgba(255, 107, 107, 0.3);
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, #00ff88 0%, #0099ff 50%, transparent 70%);
+            border-radius: 50%;
+            animation: float 12s infinite linear;
+            opacity: 0.6;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .particle:nth-child(even) {
+            background: radial-gradient(circle, #0099ff 0%, #00ff88 50%, transparent 70%);
+            animation-duration: 15s;
+            box-shadow: 0 0 10px rgba(0, 153, 255, 0.5);
+        }
+
+        .particle:nth-child(3n) {
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #ff6b6b 0%, #ffa500 50%, transparent 70%);
+            animation-duration: 18s;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0px) scale(0);
+                opacity: 0;
+            }
+            10% { 
+                opacity: 0.8;
+                transform: translateY(90vh) translateX(10px) scale(1);
+            }
+            50% { 
+                opacity: 1;
+                transform: translateY(50vh) translateX(-20px) scale(1.2);
+            }
+            90% { 
+                opacity: 0.6;
+                transform: translateY(10vh) translateX(30px) scale(0.8);
+            }
+            100% {
+                transform: translateY(-10vh) translateX(50px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .contact-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .project {
+            margin-top: 8px;
+
+        }
+
+        .contact-link {
+            color: #00ff88;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #00ff88;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .contact-link:hover {
+            background: rgba(0, 255, 136, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .name-title { font-size: 32px; }
+            .block { margin: 0 10px; padding: 20px; }
+            .project-grid { grid-template-columns: 1fr; }
+            .skills-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-particles" id="particles"></div>
+    
+    <!-- Authentication Overlay -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-container">
+            <h2 class="auth-title">🔐 DECENTRALIZED ACCESS(Blockchain Theme)</h2>
+            <p style="margin-bottom: 20px; color: #888;">Enter your unique hash to access the portfolio blockchain</p>
+            <input type="text" class="hash-input" id="hashInput" placeholder="0x7a8f9c2d1e4b6a3f8c2d9e1a4b7f3c8d6e9a2f1b4c7e8a3d6f9b2e5c8a1d4f7b0..." maxlength="66">
+            <button class="auth-btn" onclick="authenticateUser()">ACCESS BLOCKCHAIN</button>
+            <p style="margin-top: 15px; font-size: 12px; color: #666;">
+                Hint: Try to enter some random string or number
+            </p>
+        </div>
+    </div>
+
+    <!-- Portfolio Container -->
+    <div class="portfolio-container" id="portfolioContainer">
+        <div class="header">
+            <h1 class="name-title">SREEDHAR REDDY MUNAGALA</h1>
+            <p class="subtitle">BLOCKCHAIN DEVELOPER & WEB3 ENGINEER</p>
+            <div class="contact-links">
+                <a href="mailto:munagalas2023@fau.edu" class="contact-link">📧 Email</a>
+                <a href="https://linkedin.com/in/sreedhar-reddy-munagala" class="contact-link">💼 LinkedIn</a>
+                <a href="https://github.com/Sreedharreddy20" class="contact-link">🐙 GitHub</a>
+            </div>
+        </div>
+
+        <div class="blockchain-container" id="blockchainContainer">
+            <div class="chain-connection" id="chainConnection"></div>
+            
+            <!-- Genesis Block -->
+            <div class="block genesis-block" onclick="toggleBlock(this)">
+                <div class="transaction-id">TX: 0xgenesis001</div>
+                <div class="block-header">
+                    <h3 class="block-title">🔗 GENESIS BLOCK - PROFILE</h3>
+                    <span class="block-hash">Hash: 0x1a2b3c...</span>
+                </div>
+                <div class="block-preview">
+                    Innovative Computer Science graduate specializing in blockchain & Web3...
+                </div>
+                <div class="block-content">
+                    <div class="detail-item">
+                        <strong>Location:</strong> Boca Raton, Florida
+                    </div>
+                    <div class="detail-item">
+                        <strong>Phone:</strong> 561-664-8529
+                    </div>
+                    <div class="detail-item">
+                        <strong>Mission:</strong> Building the future of decentralized applications with cutting-edge blockchain technology and smart contract development.
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <!-- Experience Block -->
+            <div class="block" onclick="toggleBlock(this)">
+                <div class="transaction-id">TX: 0xexp001</div>
+                <div class="block-header">
+                    <h3 class="block-title">💼 EXPERIENCE BLOCK</h3>
+                    <span class="block-hash">Hash: 0x3c4d5e...</span>
+                </div>
+                <div class="block-preview">
+                    Cognizant Programmer Analyst Trainee Intern...
+                </div>
+                <div class="block-content">
+                    <div class="detail-item">
+                        <strong>🏢 Cognizant</strong><br>
+                        <em>Programmer Analyst Trainee Intern | July-December 2022</em>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Built modern enterprise applications focusing on relationship modeling and dynamic components</li>
+                            <li>Worked within large engineering teams to digitize enterprise operations using cloud tools</li>
+                            <li>Specialized in Salesforce Cloud Platform Administration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Block -->
+            <div class="block" onclick="toggleBlock(this)">
+                <div class="transaction-id">TX: 0xproj001</div>
+                <div class="block-header">
+                    <h3 class="block-title">🚀 PROJECTS BLOCK</h3>
+                    <span class="block-hash">Hash: 0x4d5e6f...</span>
+                </div>
+                <div class="block-preview">
+                    Web3 Wallet, Cross-Bank Settlement, Solana Smart Contracts...
+                </div>
+                <div class="block-content">
+                    <div class="project-grid">
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">🌐 Web3 Wallet Application</h4>
+                            <p><strong>Tech:</strong> React.js, Ethers.js, Alchemy, Sepolia Testnet.</p>
+                            <p class="project">Built a React-based Web3 wallet with MetaMask integration.Used Ethers.js and Alchemy to interact with Ethereum blockchain.</p>
+                        </div>
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">🏦 ERC-20 Token Smart Contract Project</h4>
+                            <p><strong>Tech:</strong> Solidity, Remix IDE, Etherium(sepolia testnet), Ether.js.</p>
+                            <p class="project">Deployed the token contract to the Ethereum Sepolia Testnet using Remix IDE. Tested token minting, transfers, and allowance/approval functionality.</p>
+                        </div>
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">⚡ NFT Marketplace</h4>
+                            <p><strong>Tech:</strong> Solidity, Hardhat, OpenZeppelin, MetaMask Wallet, Ethers.js</p>
+                            <p class="project">Implemented the ERC-721 standard by extending OpenZeppelin’s ERC721URIStorage, ensuring compatibility with widely-used NFT wallets and marketplaces.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Block -->
+            <div class="block" onclick="toggleBlock(this)">
+                <div class="transaction-id">TX: 0xskill001</div>
+                <div class="block-header">
+                    <h3 class="block-title">⚡ TECHNICAL SKILLS BLOCK</h3>
+                    <span class="block-hash">Hash: 0x6f7a8b...</span>
+                </div>
+                <div class="block-preview">
+                    Blockchain, Web3, Smart Contracts, Full-Stack Development...
+                </div>
+                <div class="block-content">
+                    <div class="skills-grid">
+                        <div class="skill-category">
+                            <h4>Programming Languages</h4>
+                            <p>Python • Java • C • Solidity • JavaScript • HTML • CSS  </p>
+                        </div>
+                        <div class="skill-category">
+                            <h4>Blockchain & Web3</h4>
+                            <p>Solidity • Wallets • Smart Contracts • Ethereum • MetaMask • Alchemy • Ethers.js • Web3.js</p>
+                        </div>
+                        <div class="skill-category">
+                            <h4>Frameworks & Tools</h4>
+                            <p>React.js • Next.js • Tailwind CSS • VS Code • Google Cloud Platform • REST APIs</p>
+                        </div>
+                        <div class="skill-category">
+                            <h4>Soft Skills</h4>
+                            <p>Problem Solving • Time Management • Engineering Principles • Reliability</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Block -->
+            <div class="block" onclick="toggleBlock(this)">
+                <div class="transaction-id">TX: 0xcourse001</div>
+                <div class="block-header">
+                    <h3 class="block-title">📚 COURSES BLOCK</h3>
+                    <span class="block-hash">Hash: 0x5e6f7a...</span>
+                </div>
+                <div class="block-preview">
+                    Data Structures & Algorithms, Solidity Smart Contracts, Web Development...
+                </div>
+                <div class="block-content">
+                    <div class="project-grid">
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">📊 Data Structures and Algorithms</h4>
+                            <p><strong>Platform:</strong> thes30.com</p>
+                            <p>Comprehensive study of fundamental data structures, algorithm analysis, and optimization techniques for efficient problem-solving.</p>
+                        </div>
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">🔐 Solidity: Beginner to Intermediate Smart Contracts</h4>
+                            <p><strong>Platform:</strong> Cryptozombies.io</p>
+                            <p>Hands-on blockchain development course covering smart contract creation, deployment, and security best practices on Ethereum.</p>
+                        </div>
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">🌐 Web Development</h4>
+                            <p><strong>Platform:</strong> 100xdevs.com</p>
+                            <p>Full-stack web development covering modern JavaScript frameworks, API integration, and responsive design principles.</p>
+                        </div>
+                        <div class="project-card">
+                            <h4 style="color: #00ff88; margin-bottom: 10px;">⚡ Web3</h4>
+                            <p><strong>Platform:</strong> 100xDevs.com</p>
+                            <p>Advanced Web3 development including DApp creation, wallet integration, blockchain interaction, and decentralized protocols.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Education Block -->
+            <div class="block" onclick="toggleBlock(this)">
+                <div class="transaction-id">TX: 0xedu001</div>
+                <div class="block-header">
+                    <h3 class="block-title">🎓 EDUCATION BLOCK</h3>
+                    <span class="block-hash">Hash: 0x2b3c4d...</span>
+                </div>
+                <div class="block-preview">
+                    Masters in Computer Science + Bachelor of Engineering...
+                </div>
+                <div class="block-content">
+                    <div class="detail-item">
+                        <strong>🏛️ Florida Atlantic University</strong><br>
+                        Masters in Computer and Information Sciences<br>
+                        <em>May 2025 | Boca Raton, Florida</em>
+                    </div>
+                    <div class="detail-item">
+                        <strong>🏛️ Sathyabama Institute of Science and Technology</strong><br>
+                        Bachelor of Engineering in Computer Science<br>
+                        <em>June 2022 | Chennai, Tamil Nadu</em>
+                    </div>
+                    <div class="detail-item">
+                        <strong>📚 Relevant Coursework:</strong><br>
+                        Blockchain • Web3 • Data Structures • Analysis of Algorithms • Database Management • Deep Learning • Software Engineering • Web Development
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+    </div>
+
+    <script>
+        // Authentication
+        function authenticateUser() {
+            const hashInput = document.getElementById('hashInput');
+            const hash = hashInput.value.trim();
+            
+            if (hash.length > 0) {
+                document.getElementById('authOverlay').style.display = 'none';
+                document.getElementById('portfolioContainer').style.display = 'block';
+                initializeBlockchain();
+                createParticles();
+            } else {
+                hashInput.style.borderColor = '#ff6b6b';
+                setTimeout(() => {
+                    hashInput.style.borderColor = '#00ff88';
+                }, 1000);
+            }
+        }
+
+        // Allow Enter key for authentication
+        document.getElementById('hashInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                authenticateUser();
+            }
+        });
+
+        // Block Toggle Function
+        function toggleBlock(block) {
+            const isExpanded = block.classList.contains('expanded');
+            
+            // Close all blocks first
+            document.querySelectorAll('.block').forEach(b => {
+                b.classList.remove('expanded');
+            });
+            
+            // Open clicked block if it wasn't already open
+            if (!isExpanded) {
+                block.classList.add('expanded');
+            }
+        }
+
+        // Initialize blockchain visualization
+        function initializeBlockchain() {
+            const blocks = document.querySelectorAll('.block');
+            const chainConnection = document.getElementById('chainConnection');
+            
+            // Calculate chain connection height
+            const container = document.getElementById('blockchainContainer');
+            const containerHeight = container.scrollHeight;
+            chainConnection.style.height = `${containerHeight - 100}px`;
+            chainConnection.style.top = '50px';
+            
+            // Add staggered animation to blocks
+            blocks.forEach((block, index) => {
+                block.style.animationDelay = `${index * 0.2}s`;
+                block.style.animation = 'slideInFromRight 0.8s ease forwards';
+            });
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 40;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 12 + 's';
+                particle.style.animationDuration = (Math.random() * 8 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Add slide-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInFromRight {
+                0% {
+                    transform: translateX(100px);
+                    opacity: 0;
+                }
+                100% {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Dynamic hash generation for transaction IDs
+        setInterval(() => {
+            const txElements = document.querySelectorAll('.transaction-id');
+            txElements.forEach(tx => {
+                if (Math.random() < 0.1) { // 10% chance to update
+                    const originalText = tx.textContent;
+                    tx.style.opacity = '0.5';
+                    setTimeout(() => {
+                        tx.style.opacity = '1';
+                    }, 200);
+                }
+            });
+        }, 3000);
+    </script>
+</body>
+</html>
